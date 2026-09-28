@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice Data Cleaner</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Design Tokens ────────────────────────────────────────────── */
+    :root {
+      --primary:          #2563eb;
+      --primary-dark:     #1d4ed8;
+      --primary-light:    #eff6ff;
+      --primary-grad:     linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      --primary-grad-h:   linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+
+      --success:          #16a34a;
+      --success-bg:       #f0fdf4;
+      --success-border:   #bbf7d0;
+
+      --error:            #dc2626;
+      --error-bg:         #fef2f2;
+      --error-border:     #fecaca;
+
+      --warning:          #d97706;
+      --warning-bg:       #fffbeb;
+
+      --sd-color:         #7c3aed;
+      --sd-bg:            #f5f3ff;
+      --aw-color:         #0891b2;
+      --aw-bg:            #ecfeff;
+
+      --text-900:         #0f172a;
+      --text-700:         #334155;
+      --text-500:         #64748b;
+      --text-300:         #94a3b8;
+
+      --bg-page:          #f1f5f9;
+      --bg-card:          #ffffff;
+      --border:           #e2e8f0;
+      --border-focus:     #93c5fd;
+
+      --radius-xl:        20px;
+      --radius-lg:        14px;
+      --radius-md:        10px;
+      --radius-sm:        7px;
+      --radius-xs:        5px;
+
+      --shadow-card:      0 1px 3px rgba(0,0,0,.06), 0 8px 32px rgba(0,0,0,.07);
+      --shadow-btn:       0 4px 14px rgba(37,99,235,.35);
+      --shadow-hover:     0 6px 20px rgba(37,99,235,.4);
+
+      --transition:       all 0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Reset ────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-page);
+      color: var(--text-700);
+      min-height: 100vh;
+      padding: 28px 20px 60px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────── */
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      animation: fadeUp .4s ease both;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 99px;
+      margin-bottom: 14px;
+    }
+
+    .header-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: var(--primary-grad);
+      color: #fff;
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(37,99,235,.28);
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-900);
+      letter-spacing: -.02em;
+    }
+
+    .header p {
+      font-size: .97rem;
+      color: var(--text-500);
+      margin-top: 6px;
+    }
+
+    /* ── Steps ────────────────────────────────────────────────────── */
+    .steps {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .step-wrap {
+      display: flex;
+      align-items: center;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 90px;
+    }
+
+    .step-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--text-300);
+      font-weight: 700;
+      font-size: .88rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      border: 2px solid transparent;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-label {
+      font-size: .75rem;
+      color: var(--text-300);
+      font-weight: 500;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .step-line {
+      height: 2px;
+      width: 60px;
+      background: var(--border);
+      margin-bottom: 26px;
+      transition: var(--transition);
+    }
+
+    .step.active .step-dot {
+      background: var(--primary-grad);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .step.active .step-label {
+      color: var(--text-700);
+      font-weight: 600;
+    }
+
+    .step.done .step-dot {
+      background: var(--success);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .step.done .step-label { color: var(--success); font-weight: 600; }
+
+    .step-line.done { background: var(--success); }
+    .step-line.active { background: var(--primary); }
+
+    /* ── Card ─────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-header-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+
+    .card-header-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-900);
+    }
+
+    .card-header-sub {
+      font-size: .82rem;
+      color: var(--text-500);
+      margin-top: 1px;
+    }
+
+    .card-body { padding: 28px; }
+
+    /* ── Upload Zone ──────────────────────────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      background: #fafbfd;
+      padding: 40px 24px;
+      text-align: center;
+      transition: var(--transition);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .upload-zone-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      transition: var(--transition);
+    }
+
+    .upload-zone:hover .upload-zone-icon {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .upload-zone-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-900);
+      margin-bottom: 4px;
+    }
+
+    .upload-zone-sub {
+      font-size: .86rem;
+      color: var(--text-500);
+    }
+
+    .upload-zone-sub span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* ── File Pills ───────────────────────────────────────────────── */
+    .file-pills {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .file-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success);
+      font-size: .82rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 99px;
+    }
+
+    /* ── Info Panel (column rules) ────────────────────────────────── */
+    .info-panel {
+      background: var(--warning-bg);
+      border: 1px solid #fde68a;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .info-panel i { color: var(--warning); margin-top: 2px; flex-shrink: 0; }
+
+    .info-panel-body { font-size: .86rem; color: var(--text-700); }
+    .info-panel-body strong { color: var(--text-900); }
+
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .rule-chip {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: .8rem;
+    }
+
+    .rule-chip .chip-label {
+      font-weight: 700;
+      font-size: .72rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .chip-sd .chip-label { color: var(--sd-color); }
+    .chip-aw .chip-label { color: var(--aw-color); }
+
+    /* ── Process Button ───────────────────────────────────────────── */
+    .process-btn {
+      width: 100%;
+      border: none;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+      background: var(--primary-grad);
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin-top: 22px;
+      box-shadow: var(--shadow-btn);
+      transition: var(--transition);
+      letter-spacing: .01em;
+    }
+
+    .process-btn:hover:not(:disabled) {
+      background: var(--primary-grad-h);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+
+    .process-btn:disabled {
+      background: #cbd5e1;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Spinner ──────────────────────────────────────────────────── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── Loading Block ────────────────────────────────────────────── */
+    #loading {
+      display: none;
+      background: var(--primary-light);
+      border: 1px solid var(--border-focus);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-top: 16px;
+      animation: fadeUp .3s ease;
+    }
+
+    .loading-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .loading-spinner {
+      width: 22px; height: 22px;
+      border: 3px solid rgba(37,99,235,.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .loading-text {
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
+    .loading-sub {
+      font-size: .82rem;
+      color: var(--text-500);
+      margin-top: 3px;
+    }
+
+    /* ── Message Banners ──────────────────────────────────────────── */
+    .msg {
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-top: 18px;
+      font-size: .9rem;
+      animation: fadeUp .3s ease;
+    }
+
+    .msg-icon {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      flex-shrink: 0;
+    }
+
+    .msg-success {
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success);
+    }
+
+    .msg-success .msg-icon { background: var(--success); color: #fff; }
+
+    .msg-error {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error);
+    }
+
+    .msg-error .msg-icon { background: var(--error); color: #fff; }
+
+    /* ── Summary Grid ─────────────────────────────────────────────── */
+    #summarySection { display: none; margin-top: 24px; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 16px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+      transition: var(--transition);
+    }
+
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+
+    .stat-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .95rem;
+      margin: 0 auto 10px;
+    }
+
+    .stat-icon.blue   { background: var(--primary-light);  color: var(--primary); }
+    .stat-icon.green  { background: var(--success-bg);     color: var(--success); }
+    .stat-icon.purple { background: var(--sd-bg);          color: var(--sd-color); }
+    .stat-icon.cyan   { background: var(--aw-bg);          color: var(--aw-color); }
+    .stat-icon.orange { background: var(--warning-bg);     color: var(--warning); }
+    .stat-icon.teal   { background: #f0fdfa;               color: #0d9488; }
+    .stat-icon.indigo { background: #eef2ff;               color: #4338ca; }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-900);
+      letter-spacing: -.02em;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .stat-label {
+      font-size: .78rem;
+      color: var(--text-500);
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    /* ── Preview Table ────────────────────────────────────────────── */
+    #previewSection { display: none; margin-top: 24px; }
+
+    .preview-wrapper {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+      white-space: nowrap;
+    }
+
+    thead tr {
+      background: linear-gradient(to right, #f8fafc, #f1f5f9);
+      border-bottom: 2px solid var(--border);
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: .73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text-500);
+    }
+
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-700);
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* highlight derived columns */
+    td.col-location {
+      font-weight: 700;
+      font-size: .78rem;
+      letter-spacing: .04em;
+    }
+
+    td.col-sd { color: var(--sd-color); background: var(--sd-bg); }
+    td.col-aw { color: var(--aw-color); background: var(--aw-bg); }
+
+    td.col-service {
+      font-weight: 600;
+      color: var(--text-900);
+    }
+
+    /* ── Action Buttons ───────────────────────────────────────────── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 160px;
+      border: none;
+      padding: 13px 18px;
+      font-size: .92rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .btn-download {
+      background: var(--primary-grad);
+      color: #fff;
+      box-shadow: var(--shadow-btn);
+    }
+
+    .btn-download:hover {
+      background: var(--primary-grad-h);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-reset {
+      background: var(--bg-card);
+      color: var(--text-700);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-reset:hover {
+      background: var(--bg-page);
+      border-color: var(--text-500);
+    }
+
+    /* ── Empty State ──────────────────────────────────────────────── */
+    .empty-preview {
+      text-align: center;
+      padding: 36px;
+      color: var(--text-300);
+      font-size: .9rem;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: .8rem;
+      color: var(--text-300);
+    }
+
+    /* ── Animations ───────────────────────────────────────────────── */
+    @keyframes spin    { to { transform: rotate(360deg); } }
+    @keyframes fadeUp  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .rules-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .actions { flex-direction: column; }
+      .header h1 { font-size: 1.5rem; }
+      .card-body { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- ── Header ──────────────────────────────────────────────────── -->
+  <div class="header">
+    <div class="header-badge"><i class="fas fa-sparkles"></i> Automated Data Cleaning</div>
+    <div class="header-icon"><i class="fas fa-file-invoice"></i></div>
+    <h1>Invoice Data Cleaner</h1>
+    <p>Extracts <strong>Location</strong> &amp; <strong>Service Description</strong> automatically from the Notes column</p>
+  </div>
+
+  <!-- ── Steps ────────────────────────────────────────────────────── -->
+  <div class="steps">
+    <div class="step-wrap">
+      <div class="step active" id="step1">
+        <div class="step-dot">1</div>
+        <div class="step-label">Upload File</div>
+      </div>
+    </div>
+    <div class="step-wrap">
+      <div class="step-line" id="line1"></div>
+      <div class="step" id="step2">
+        <div class="step-dot">2</div>
+        <div class="step-label">Processing</div>
+      </div>
+    </div>
+    <div class="step-wrap">
+      <div class="step-line" id="line2"></div>
+      <div class="step" id="step3">
+        <div class="step-dot">3</div>
+        <div class="step-label">Download</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Upload Card ──────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon"><i class="fas fa-upload"></i></div>
+      <div>
+        <div class="card-header-title">Upload Raw Invoice File(s)</div>
+        <div class="card-header-sub">Supports .xlsx, .xls, .csv — multiple files allowed</div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form id="uploadForm">
+        <!-- Drop Zone -->
+        <div class="upload-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple />
+          <div class="upload-zone-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+          <div class="upload-zone-title">Drop files here or click to browse</div>
+          <div class="upload-zone-sub">Accepts <span>.xlsx</span>, <span>.xls</span>, <span>.csv</span></div>
+        </div>
+
+        <!-- Selected files pills -->
+        
+
+        <!-- Process Button -->
+        <button type="submit" class="process-btn" id="processBtn">
+          <span id="btnIcon"><i class="fas fa-wand-magic-sparkles"></i></span>
+          <span id="btnText">Process &amp; Clean Data</span>
+          <div class="spinner" id="btnSpinner" style="display:none;"></div>
+        </button>
+      </form>
+
+      <!-- Loading block -->
+      <div id="loading">
+        <div class="loading-row">
+          <div class="loading-spinner"></div>
+          <div>
+            <div class="loading-text">Analysing &amp; cleaning your data…</div>
+            <div class="loading-sub">Extracting Location &amp; Service Desc from Notes column</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success / Error messages -->
+      <div class="msg msg-success" id="msgSuccess">
+        <div class="msg-icon"><i class="fas fa-check"></i></div>
+        <div id="successText"></div>
+      </div>
+      <div class="msg msg-error" id="msgError">
+        <div class="msg-icon"><i class="fas fa-xmark"></i></div>
+        <div id="errorText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Summary ──────────────────────────────────────────────────── -->
+  <div id="summarySection">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon"><i class="fas fa-chart-bar"></i></div>
+        <div>
+          <div class="card-header-title">Processing Summary</div>
+          <div class="card-header-sub">Overview of the cleaned dataset</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="summary-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-table"></i></div>
+            <div class="stat-value" id="statOriginal">0</div>
+            <div class="stat-label">Original Rows</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-value" id="statProcessed">0</div>
+            <div class="stat-label">Processed Rows</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-building"></i></div>
+            <div class="stat-value" id="statSD">0</div>
+            <div class="stat-label">SD Rows</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon cyan"><i class="fas fa-city"></i></div>
+            <div class="stat-value" id="statAW">0</div>
+            <div class="stat-label">AW Rows</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-tag"></i></div>
+            <div class="stat-value" id="statServices">0</div>
+            <div class="stat-label">Unique Services</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon teal"><i class="fas fa-store"></i></div>
+            <div class="stat-value" id="statVendors">0</div>
+            <div class="stat-label">Unique Vendors</div>
+          </div>
+          <div class="stat-card" style="grid-column: span 1;">
+            <div class="stat-icon indigo"><i class="fas fa-indian-rupee-sign"></i></div>
+            <div class="stat-value" id="statAmount" style="font-size:1.1rem;">₹0</div>
+            <div class="stat-label">Total Amount</div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions">
+          <button class="btn btn-download" id="downloadBtn" data-file="" data-name="">
+            <i class="fas fa-file-arrow-down"></i> Download Cleaned Excel
+          </button>
+          <button class="btn btn-reset" id="newReportBtn">
+            <i class="fas fa-rotate-left"></i> Process New File
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Preview Table ────────────────────────────────────────────── -->
+  <div id="previewSection">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon"><i class="fas fa-eye"></i></div>
+        <div>
+          <div class="card-header-title">Data Preview</div>
+          <div class="card-header-sub">First 15 rows of cleaned output — <em>Location</em> &amp; <em>Service Desc</em> columns are highlighted</div>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div class="preview-wrapper">
+          <table>
+            <thead id="previewHeader"></thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+          <div class="empty-preview" id="emptyPreview" style="display:none;">No preview data available.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Invoice Data Cleaner &mdash; Location &amp; Service Description auto-extraction</div>
+</div>
+
+<!-- ══════════════════════════ JavaScript ══════════════════════════ -->
+<script>
+  /* ── Element refs ────────────────────────────────────────────── */
+  const uploadForm    = document.getElementById('uploadForm');
+  const fileInput     = document.getElementById('fileInput');
+  const dropZone      = document.getElementById('dropZone');
+  const filePills     = document.getElementById('filePills');
+  const processBtn    = document.getElementById('processBtn');
+  const btnText       = document.getElementById('btnText');
+  const btnIcon       = document.getElementById('btnIcon');
+  const btnSpinner    = document.getElementById('btnSpinner');
+  const loading       = document.getElementById('loading');
+  const msgSuccess    = document.getElementById('msgSuccess');
+  const msgError      = document.getElementById('msgError');
+  const successText   = document.getElementById('successText');
+  const errorText     = document.getElementById('errorText');
+  const summarySection  = document.getElementById('summarySection');
+  const previewSection  = document.getElementById('previewSection');
+  const previewHeader   = document.getElementById('previewHeader');
+  const previewBody     = document.getElementById('previewBody');
+  const emptyPreview    = document.getElementById('emptyPreview');
+  const downloadBtn   = document.getElementById('downloadBtn');
+  const newReportBtn  = document.getElementById('newReportBtn');
+
+  /* ── Drag-and-drop ───────────────────────────────────────────── */
+  ['dragenter','dragover'].forEach(ev =>
+    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('dragover'); })
+  );
+  ['dragleave','drop'].forEach(ev =>
+    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('dragover'); })
+  );
+  dropZone.addEventListener('drop', e => {
+    fileInput.files = e.dataTransfer.files;
+    renderPills();
+  });
+
+  fileInput.addEventListener('change', renderPills);
+
+  /* ── Form submit ─────────────────────────────────────────────── */
+  uploadForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!fileInput.files.length) { showError('Please select at least one file.'); return; }
+
+    hideMessages();
+    resetResults();
+    setLoading(true);
+    setStep(2);
+
+    const fd = new FormData();
+    for (const f of fileInput.files) fd.append('data_files', f);
+
+    try {
+      const res    = await fetch('/process', { method: 'POST', body: fd });
+      const result = await res.json();
+
+      if (!result.success) { showError(result.error || 'Processing failed.'); return; }
+
+      showSuccess(result.message || 'Data cleaned successfully!');
+      renderSummary(result.summary || {});
+      renderPreview(result.preview_data || []);
+
+      downloadBtn.dataset.file = result.file_data || '';
+      downloadBtn.dataset.name = result.filename  || 'cleaned.xlsx';
+
+      summarySection.style.display = 'block';
+      if ((result.preview_data || []).length) previewSection.style.display = 'block';
+      setStep(3);
+      summarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+      showError('Network error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  /* ── Download ────────────────────────────────────────────────── */
+  downloadBtn.addEventListener('click', () => {
+    const data = downloadBtn.dataset.file;
+    const name = downloadBtn.dataset.name || 'cleaned.xlsx';
+    if (!data) { showError('No file available for download.'); return; }
+
+    const blob = new Blob(
+      [Uint8Array.from(atob(data), c => c.charCodeAt(0))],
+      { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ── Reset ───────────────────────────────────────────────────── */
+  newReportBtn.addEventListener('click', () => {
+    uploadForm.reset();
+    filePills.innerHTML = '';
+    filePills.style.display = 'none';
+    hideMessages();
+    resetResults();
+    downloadBtn.dataset.file = '';
+    downloadBtn.dataset.name = '';
+    setStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ── Helpers ─────────────────────────────────────────────────── */
+  function renderPills() {
+    filePills.innerHTML = '';
+    if (!fileInput.files.length) { filePills.style.display = 'none'; return; }
+    filePills.style.display = 'flex';
+    Array.from(fileInput.files).forEach(f => {
+      const pill = document.createElement('div');
+      pill.className = 'file-pill';
+      pill.innerHTML = `<i class="fas fa-file-excel"></i>${esc(f.name)}`;
+      filePills.appendChild(pill);
+    });
+  }
+
+  function showSuccess(msg) {
+    msgError.style.display   = 'none';
+    successText.textContent   = msg;
+    msgSuccess.style.display  = 'flex';
+  }
+
+  function showError(msg) {
+    msgSuccess.style.display = 'none';
+    errorText.textContent     = msg;
+    msgError.style.display    = 'flex';
+  }
+
+  function hideMessages() {
+    msgSuccess.style.display = 'none';
+    msgError.style.display   = 'none';
+  }
+
+  function setLoading(on) {
+    loading.style.display   = on ? 'block' : 'none';
+    processBtn.disabled     = on;
+    btnIcon.style.display   = on ? 'none' : 'inline';
+    btnSpinner.style.display = on ? 'flex' : 'none';
+  }
+
+  function setStep(n) {
+    // steps: 1,2,3 — elements: step1,step2,step3, line1,line2
+    [1,2,3].forEach(i => {
+      const s = document.getElementById('step' + i);
+      s.classList.remove('active','done');
+      if (i < n)  s.classList.add('done');
+      if (i === n) s.classList.add('active');
+    });
+    [1,2].forEach(i => {
+      const l = document.getElementById('line' + i);
+      l.classList.remove('active','done');
+      if (i < n - 1) l.classList.add('done');
+      if (i === n - 1) l.classList.add('active');
+    });
+  }
+
+  function renderSummary(s) {
+    document.getElementById('statOriginal').textContent  = fmt(s.original_rows  ?? 0);
+    document.getElementById('statProcessed').textContent = fmt(s.processed_rows ?? 0);
+    document.getElementById('statSD').textContent        = fmt(s.sd_count        ?? 0);
+    document.getElementById('statAW').textContent        = fmt(s.aw_count        ?? 0);
+    document.getElementById('statServices').textContent  = fmt(s.unique_services ?? 0);
+    document.getElementById('statVendors').textContent   = fmt(s.unique_vendors  ?? 0);
+    document.getElementById('statAmount').textContent    = fmtINR(s.total_amount ?? 0);
+  }
+
+  function renderPreview(data) {
+    previewHeader.innerHTML = '';
+    previewBody.innerHTML   = '';
+    emptyPreview.style.display = 'none';
+
+    if (!Array.isArray(data) || !data.length) {
+      emptyPreview.style.display = 'block';
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+
+    // thead
+    previewHeader.innerHTML =
+      `<tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr>`;
+
+    // tbody — highlight Location and Service Desc columns
+    previewBody.innerHTML = data.map(row =>
+      `<tr>${headers.map(h => {
+        const val     = row[h] ?? '';
+        const hLower  = h.toLowerCase();
+        let cls       = '';
+
+        if (hLower === 'location') {
+          const locVal = String(val).trim().toUpperCase();
+          cls = locVal === 'SD' ? 'col-location col-sd'
+              : locVal === 'AW' ? 'col-location col-aw'
+              : 'col-location';
+        } else if (hLower === 'service desc') {
+          cls = 'col-service';
+        }
+
+        return `<td class="${cls}" title="${esc(String(val))}">${esc(String(val))}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+  }
+
+  function resetResults() {
+    summarySection.style.display = 'none';
+    previewSection.style.display = 'none';
+    previewHeader.innerHTML = '';
+    previewBody.innerHTML   = '';
+    emptyPreview.style.display = 'none';
+    ['statOriginal','statProcessed','statSD','statAW','statServices','statVendors']
+      .forEach(id => document.getElementById(id).textContent = '0');
+    document.getElementById('statAmount').textContent = '₹0';
+  }
+
+  function fmt(n)       { return Number(n).toLocaleString('en-IN'); }
+  function fmtINR(n)    {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency', currency: 'INR',
+      minimumFractionDigits: 0, maximumFractionDigits: 0
+    }).format(Number(n));
+  }
+  function esc(v) {
+    return String(v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
